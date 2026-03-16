@@ -13,29 +13,23 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [time, setTime] = useState("");
+  const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 100);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
 
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        })
-      );
+      const sections = navLinks.map((l) => l.href.replace("#", ""));
+      for (const id of sections.reverse()) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top < 300) {
+          setActiveSection(id);
+          break;
+        }
+      }
     };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
@@ -43,76 +37,80 @@ export default function Navbar() {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
+        transition={{ duration: 0.8, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
             ? "bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-[#FFC107]/10"
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between h-20">
           {/* Logo */}
           <a href="#" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 flex items-center justify-center">
-              <div className="absolute inset-0 bg-[#FFC107] rotate-45 group-hover:rotate-[135deg] transition-transform duration-500" />
-              <span className="relative font-[Courier_Prime] font-bold text-[#0A0A0A] text-lg">
+            <div className="relative w-10 h-10">
+              <div className="absolute inset-0 bg-[#FFC107] rounded-sm rotate-45 group-hover:rotate-[225deg] transition-transform duration-700" />
+              <span className="absolute inset-0 flex items-center justify-center font-[family-name:var(--font-mono)] text-[#0A0A0A] font-bold text-lg">
                 F
               </span>
             </div>
-            <span className="font-[Crimson_Pro] text-xl font-semibold tracking-tight text-[#F5F5F5]">
+            <span className="font-[family-name:var(--font-heading)] text-xl font-semibold tracking-tight text-[#F5F5F5]">
               Focus<span className="text-[#FFC107]">IB</span>
             </span>
           </a>
 
-          {/* Center links - desktop */}
+          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <a
-                key={link.label}
+                key={link.href}
                 href={link.href}
-                className="px-5 py-2 text-sm font-[Spectral] text-[#F5F5F5]/60 hover:text-[#FFC107] transition-colors duration-300 relative group"
+                className={`relative px-5 py-2 text-sm font-[family-name:var(--font-body)] transition-colors duration-300 ${
+                  activeSection === link.href.replace("#", "")
+                    ? "text-[#FFC107]"
+                    : "text-[#F5F5F5]/60 hover:text-[#F5F5F5]"
+                }`}
               >
                 {link.label}
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 group-hover:w-6 h-[2px] bg-[#FFC107] transition-all duration-300" />
+                {activeSection === link.href.replace("#", "") && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute bottom-0 left-2 right-2 h-[2px] bg-[#FFC107]"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
               </a>
             ))}
           </div>
 
-          {/* Right side */}
-          <div className="hidden md:flex items-center gap-6">
-            <span className="font-[Courier_Prime] text-xs text-[#F5F5F5]/30 tabular-nums">
-              {time}
-            </span>
+          {/* CTA + Mobile toggle */}
+          <div className="flex items-center gap-4">
             <a
               href="#pricing"
-              className="relative px-6 py-2.5 bg-[#FFC107] text-[#0A0A0A] font-[Crimson_Pro] font-semibold text-sm overflow-hidden group"
+              className="hidden md:block px-6 py-2.5 bg-[#FFC107] text-[#0A0A0A] font-[family-name:var(--font-heading)] font-semibold text-sm rounded-sm hover:bg-[#FFD700] transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,193,7,0.3)]"
             >
-              <span className="relative z-10">Start Focusing</span>
-              <div className="absolute inset-0 bg-[#FFD700] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              Start Focusing
             </a>
-          </div>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden flex flex-col gap-1.5 p-2"
-            aria-label="Toggle menu"
-          >
-            <motion.span
-              animate={menuOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
-              className="w-6 h-[2px] bg-[#FFC107] block"
-            />
-            <motion.span
-              animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
-              className="w-6 h-[2px] bg-[#FFC107] block"
-            />
-            <motion.span
-              animate={
-                menuOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }
-              }
-              className="w-6 h-[2px] bg-[#FFC107] block"
-            />
-          </button>
+            {/* Hamburger */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden flex flex-col gap-1.5 w-8 h-8 items-center justify-center"
+              aria-label="Toggle menu"
+            >
+              <motion.span
+                animate={menuOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
+                className="block w-6 h-[2px] bg-[#F5F5F5]"
+              />
+              <motion.span
+                animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
+                className="block w-6 h-[2px] bg-[#F5F5F5]"
+              />
+              <motion.span
+                animate={menuOpen ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
+                className="block w-6 h-[2px] bg-[#F5F5F5]"
+              />
+            </button>
+          </div>
         </div>
       </motion.nav>
 
@@ -127,13 +125,13 @@ export default function Navbar() {
           >
             {navLinks.map((link, i) => (
               <motion.a
-                key={link.label}
+                key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="font-[Crimson_Pro] text-4xl font-semibold text-[#F5F5F5] hover:text-[#FFC107] transition-colors"
+                className="font-[family-name:var(--font-heading)] text-4xl font-semibold text-[#F5F5F5] hover:text-[#FFC107] transition-colors"
               >
                 {link.label}
               </motion.a>
@@ -141,10 +139,10 @@ export default function Navbar() {
             <motion.a
               href="#pricing"
               onClick={() => setMenuOpen(false)}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-4 px-10 py-4 bg-[#FFC107] text-[#0A0A0A] font-[Crimson_Pro] font-bold text-xl"
+              className="mt-4 px-10 py-4 bg-[#FFC107] text-[#0A0A0A] font-[family-name:var(--font-heading)] font-bold text-lg rounded-sm"
             >
               Start Focusing
             </motion.a>
